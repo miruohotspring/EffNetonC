@@ -49,8 +49,7 @@ conv2d_layer_t* Conv2d(
     int padding_bottom,
     int padding_right,
     int padding_left,
-    ndarray_t* weight,
-    ndarray_t* bias
+    ndarray_t* weight
 );
 batchnorm_layer_t* Batchnorm(
     ndarray_t* running_mean,

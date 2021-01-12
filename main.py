@@ -1,7 +1,13 @@
+import PIL
+import torch
+
 from efficientnet_pytorch import EfficientNet
+import torch.nn as nn
+import torchvision.transforms as transforms
+import torchvision.datasets as datasets
 import numpy as np
 
-def main():
+def load_params():
     np.set_printoptions(suppress=True)
     path = "./data/"
     model = EfficientNet.from_pretrained("efficientnet-b0")
@@ -28,7 +34,70 @@ def main():
     #with open(path + "module_list.txt", 'w') as f:
     #    print(module_list, file=f)
 
-
+def main():
+    #load_params()
+    model = EfficientNet.from_pretrained("efficientnet-b0")
+    image_size = 224
+    val_dir = 'val'
+    
+    val_transforms = transforms.Compose([
+        transforms.Resize(image_size, interpolation=PIL.Image.BICUBIC),
+        transforms.CenterCrop(image_size),
+        transforms.ToTensor()
+    ])
+    
+    val_set = datasets.ImageFolder(val_dir, val_transforms)
+    val_loader = torch.utils.data.DataLoader(val_set)
+    
+    model.eval()
+    print(model._blocks[1]._expand_conv.weight[0][0][0][0])
+    
+    with torch.no_grad():
+        for i, (images, target) in enumerate(val_loader):
+            output = model(images)
+            print(output[0][0])
+            
+    
 if __name__ == "__main__":
     main()
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

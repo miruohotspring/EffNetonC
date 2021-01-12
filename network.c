@@ -17,9 +17,8 @@ conv2d_layer_t* Conv2d(
     int padding_bottom,
     int padding_right,
     int padding_left,
-    ndarray_t* weight,
-    ndarray_t* bias
-){
+    ndarray_t* weight
+) {
     conv2d_layer_t* layer = (conv2d_layer_t*)malloc(sizeof(conv2d_layer_t));
     layer->in_channels = in_channels;
     layer->out_channels = out_channels;
@@ -31,10 +30,25 @@ conv2d_layer_t* Conv2d(
     layer->padding_right = padding_right;
     layer->padding_left = padding_left;
     layer->weight = weight;
+    
+    return layer;
+}
+
+batchnorm_layer_t* Batchnorm(
+    ndarray_t* running_mean,
+    ndarray_t* running_var,
+    ndarray_t* weight,
+    ndarray_t* bias
+) {
+    batchnorm_layer_t* layer = (batchnorm_layer_t*)malloc(sizeof(batchnorm_layer_t));
+    layer->running_mean = running_mean;
+    layer->running_var = running_var;
+    layer->weight = weight;
     layer->bias = bias;
     
     return layer;
 }
+    
     
 ndarray_t* create_param_from_name(char* name) {
     ndarray_t* param = (ndarray_t*)malloc(sizeof(ndarray_t));
@@ -112,9 +126,9 @@ double sigmoid(double x) {
 }
 
 void swish(ndarray_t* output, const ndarray_t* input) {
-    assert(output->size == input->size);
+    assert(output->dim == input->dim);
     for (int i = 0; i < output->length; i++) {
-        output->data[i] = sigmoid(input->data[i]);
+        output->data[i] = input->data[i] * sigmoid(input->data[i]);
     }
 }
 
@@ -125,15 +139,14 @@ void conv2d_forward(
     )
 {
     assert(output->dim == input->dim);
-    
-    int hw_max = output->size[1] * output->size[2];
+    int image_size = output->size[2] * output->size[3];
     if (layer->kernel_size == 1) {
-        for (int cout = 0; cout < output->size[0]; cout++) {
-            for (int hw = 0; hw < hw_max; hw++) {
+        for (int cout = 0; cout < output->size[1]; cout++) {
+            for (int p = 0; p < image_size; p++) {
                 for (int cin = 0; cin < layer->in_channels; cin++) {
-                    output->data[cout*hw_max + hw] +=\
+                    output->data[cout*image_size + p] +=\
                     layer->weight->data[cout*layer->in_channels + cin] *\
-                    input->data[cin*hw_max + hw];
+                    input->data[cin*image_size + p];
                 }    
             }
         }
@@ -146,17 +159,14 @@ void batchnorm_forward(
     const batchnorm_layer_t* layer
     )
 {
-    assert(output->size == input->size);
-    
-    int i = 0;
-    int hw_max = output->size[1] * output->size[2];
-    for (int c = 0; c < output->size[0]; c++) {
-        for (int hw = 0; hw < hw_max; hw++) {
-            output->data[i] =\
-                ((input->data[i] - layer->running_mean->data[c]) /\
+    assert(output->dim == input->dim);
+    int image_size = output->size[2] * output->size[3];
+    for (int c = 0; c < output->size[1]; c++) {
+        for (int p = 0; p < image_size; p++) {
+            output->data[c*image_size + p] =\
+                ((input->data[c*image_size + p] - layer->running_mean->data[c]) /\
                 (sqrt(layer->running_var->data[c]) + 0.00001)) *\
                 layer->weight->data[c] + layer->bias->data[c];
-            i++;
         }
     }
 }

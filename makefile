@@ -1,5 +1,5 @@
 PROG := effnetonc
-SRCS := main.c network.c
+SRCS := main.c network.c ndarray.c
 OBJS := $(SRCS:%.c=%.o)
 DEPS := $(SRCS:%.c=%.d)
 

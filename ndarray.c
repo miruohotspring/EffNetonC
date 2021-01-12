@@ -16,6 +16,16 @@ ndarray_t* create_ndarray(int length, int dim, int* size, double* data) {
     return array;
 }
 
+ndarray_t* create_empty_ndarray(int dim, int* size) {
+    ndarray_t* array = (ndarray_t*)malloc(sizeof(ndarray_t));
+    int length = 1;
+    for (int i = 0; i < dim; i++) length *= size[i];
+    array->length = length;
+    array->dim = dim;
+    array->size = size;
+    array->data = (double*)malloc(sizeof(double)*length);
+    return array;
+}
 
 void delete_ndarray(ndarray_t* array) {
     free(array->size);
