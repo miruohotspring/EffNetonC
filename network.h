@@ -51,6 +51,19 @@ conv2d_layer_t* Conv2d(
     int padding_left,
     ndarray_t* weight
 );
+conv2d_layer_t* Conv2d_bias(
+    int in_channels,
+    int out_channels,
+    int groups,
+    int kernel_size,
+    int stride,
+    int padding_top,
+    int padding_bottom,
+    int padding_right,
+    int padding_left,
+    ndarray_t* weight,
+    ndarray_t* bias
+);
 batchnorm_layer_t* Batchnorm(
     ndarray_t* running_mean,
     ndarray_t* running_var,
@@ -72,8 +85,9 @@ void batchnorm_forward(ndarray_t* output, const ndarray_t* input, const batchnor
 void fc_forward(ndarray_t* output, const ndarray_t* input, const fc_layer_t* layer);
 
 // utility function
-double sigmoid(double x);
-void zero_padding(ndarray_t* output, ndarray_t* input, int top, int bottom, int right, int left);
+float sigmoid(float x);
+void sigmoid_multiply(ndarray_t* output, const ndarray_t* input, const ndarray_t* multiplier);
+void zero_padding(ndarray_t* output, const ndarray_t* input, int top, int bottom, int right, int left);
 void swish(ndarray_t* output, const ndarray_t* input);
 void average_pooling(ndarray_t* output, const ndarray_t* input);
 

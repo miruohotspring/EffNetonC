@@ -6,7 +6,7 @@
 #include <math.h>
 #include "ndarray.h"
 
-ndarray_t* create_ndarray(int length, int dim, int* size, double* data) {
+ndarray_t* create_ndarray(int length, int dim, int* size, float* data) {
     ndarray_t* array = (ndarray_t*)malloc(sizeof(ndarray_t));
     array->length = length;
     array->dim = dim;
@@ -23,7 +23,10 @@ ndarray_t* create_empty_ndarray(int dim, int* size) {
     array->length = length;
     array->dim = dim;
     array->size = size;
-    array->data = (double*)malloc(sizeof(double)*length);
+    array->data = (float*)malloc(sizeof(float)*length);
+    for (int i = 0; i < length; i++) {
+        array->data[i] = 0;
+    }
     return array;
 }
 

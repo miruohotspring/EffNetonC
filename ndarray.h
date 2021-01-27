@@ -5,10 +5,10 @@ typedef struct {
     int length;
     int dim;
     int* size;
-    double* data;
+    float* data;
 } ndarray_t;
 
-ndarray_t* create_ndarray(int length, int dim, int* size, double* data);
+ndarray_t* create_ndarray(int length, int dim, int* size, float* data);
 ndarray_t* create_empty_ndarray(int dim, int* size);
 void delete_ndarray(ndarray_t* param);
 

@@ -23,7 +23,7 @@ def load_params():
         #データの読み込み
         weight = model.state_dict()[m].view(-1).numpy()
         for w in weight:
-            data += "," + str(w)
+            data += "," + ('%.15f' % w)
         
         #書き出し
         module_list += (m + "\n");
@@ -50,12 +50,10 @@ def main():
     val_loader = torch.utils.data.DataLoader(val_set)
     
     model.eval()
-    print(model._blocks[1]._expand_conv.weight[0][0][0][0])
     
     with torch.no_grad():
         for i, (images, target) in enumerate(val_loader):
             output = model(images)
-            print(output[0][0])
             
     
 if __name__ == "__main__":

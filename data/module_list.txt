@@ -6,6 +6,8 @@ _blocks.1._bn0.bias
 _blocks.1._depthwise_conv.weight
 _blocks.1._bn1.running_mean
 _blocks.1._bn1.running_var
+_blocks.1._bn1.weight
+_blocks.1._bn1.bias
 _blocks.1._se_reduce.weight
 _blocks.1._se_reduce.bias
 _blocks.1._se_expand.weight
@@ -13,3 +15,5 @@ _blocks.1._se_expand.bias
 _blocks.1._project_conv.weight
 _blocks.1._bn2.running_mean
 _blocks.1._bn2.running_var
+_blocks.1._bn2.weight
+_blocks.1._bn2.bias
