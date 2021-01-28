@@ -23,7 +23,7 @@ def load_params():
         #データの読み込み
         weight = model.state_dict()[m].view(-1).numpy()
         for w in weight:
-            data += "," + ('%.15f' % w)
+            data += "," + str(w)
         
         #書き出し
         module_list += (m + "\n");

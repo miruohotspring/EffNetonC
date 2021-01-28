@@ -242,15 +242,10 @@ void batchnorm_forward(
     for (int c = 0; c < output->size[1]; c++) {
         for (int p = 0; p < image_size; p++) {
             output->data[c*image_size + p] =\
-                ((input->data[c*image_size + p] - layer->running_mean->data[c]) /\
-                (sqrt(layer->running_var->data[c]) + 0.00001)) *\
-                layer->weight->data[c] + layer->bias->data[c];
-/*
-            if (output->size[2] == 56) {
-                printf("%f, %f, %f, %f, %f, %f\n", input->data[c*image_size + p], layer->running_mean->data[c], layer->running_var->data[c], layer->weight->data[c], layer->bias->data[c], output->data[c*image_size + p]);
-                exit(0);
-            }
-*/
+                (input->data[c*image_size + p] - layer->running_mean->data[c])\
+                * (1 / sqrt(layer->running_var->data[c] + 0.001))\
+                * layer->weight->data[c]\
+                + layer->bias->data[c];
         }
     }
 }

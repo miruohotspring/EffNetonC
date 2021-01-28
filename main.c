@@ -91,9 +91,6 @@ int main(int argc, char* argv[]) {
     batchnorm_forward(bn1_out, depthwise_conv_out, bn1);
     ndarray_t* bn1_target = create_param_from_name("bn1_out");
     printf("\tdone. (loss: %f)\n", calc_loss(bn1_out, bn1_target));
-    //for (int i = 0; i < 10; i++) printf("%f, ", bn0_out->data[i]);
-    //printf("\n");
-    //for (int i = 0; i < 10; i++) printf("%f, ", bn0_target->data[i]);
     
     // swish
     printf("forwarding: swish1...\n");
@@ -168,6 +165,5 @@ int main(int argc, char* argv[]) {
     batchnorm_forward(bn2_out, project_conv_out, bn2);
     ndarray_t* bn2_target = create_param_from_name("bn2_out");
     printf("\tdone. (loss: %f)\n", calc_loss(bn2_out, bn2_target));
-    for (int i = 0; i < 5; i++) printf("%f, ", bn2_out->data[i]);
     return 0;
 }
