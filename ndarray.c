@@ -1,10 +1,11 @@
+#include "ndarray.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <math.h>
-#include "ndarray.h"
 
 ndarray_t* create_ndarray(int length, int dim, int* size, float* data) {
     ndarray_t* array = (ndarray_t*)malloc(sizeof(ndarray_t));
