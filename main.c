@@ -16,109 +16,55 @@ int main(int argc, char* argv[]) {
     printf("loading params...\n");
     load_params(&names, &params);
     
-    ndarray_t* input = create_param_from_name("expand_conv_in");
+    //ndarray_t* input = create_param_from_name("expand_conv_in");
+    ndarray_t* inputs = create_param_from_name("inputs");
+    int* pad_size = (int*)malloc(sizeof(int)*4);
+    pad_size[0] = 1;
+    pad_size[1] = 3;
+    pad_size[2] = 225;
+    pad_size[3] = 225;
+    ndarray_t* conv_stem_in = create_empty_ndarray(4, pad_size);
+    ndarray_t* conv_stem_out = create_conv2d_output(32, 3, 2, 225, 225); 
+    conv2d_layer_t* conv_stem = Conv2d(3, 32, 0, 3, 2, 0, 0, 0, 0, get_param_from_name("_conv_stem.weight"));
     
-    /*
-    // expand_conv
-    int expand_conv_out_size[4] = {1, 96, 112, 112};
-    conv2d_layer_t* expand_conv = Conv2d(16, 96, 0, 1, 1, 0, 0, 0, 0, get_param_from_name("_blocks.1._expand_conv.weight"));
-    ndarray_t* expand_conv_out = create_empty_ndarray(4, expand_conv_out_size);
+    batchnorm_layer_t* bn_stem = Batchnorm(
+        get_param_from_name("_bn0.running_mean"),
+        get_param_from_name("_bn0.running_var"),
+        get_param_from_name("_bn0.weight"),
+        get_param_from_name("_bn0.bias")
+    );    
+    ndarray_t* bn_stem_out = create_empty_ndarray(4, conv_stem_out->size);
+    ndarray_t* swish_stem_out = create_empty_ndarray(4, conv_stem_out->size);
     
-    // batch_norm0
-    batchnorm_layer_t* bn0 = Batchnorm(
-        get_param_from_name("_blocks.1._bn0.running_mean"),
-        get_param_from_name("_blocks.1._bn0.running_var"),
-        get_param_from_name("_blocks.1._bn0.weight"),
-        get_param_from_name("_blocks.1._bn0.bias")
-    );
-    ndarray_t* bn0_out = create_empty_ndarray(4, expand_conv_out_size);
+    mb_conv_block_t* blocks[16];
+    mb_conv_outputs_t* outputs[16];
+    blocks[0]  = MBConvBlock6( &outputs[0], 1,  0,  32,  16, 112, 3, 1, 1, 1, 1, 1);
+    blocks[1]  = MBConvBlock6( &outputs[1], 6,  1,  16,  24, 112, 3, 2, 0, 1, 1, 0);
+    blocks[2]  = MBConvBlock6( &outputs[2], 6,  2,  24,  24,  56, 3, 1, 1, 1, 1, 1);
+    blocks[3]  = MBConvBlock6( &outputs[3], 6,  3,  24,  40,  56, 5, 2, 1, 2, 2, 1);
+    blocks[4]  = MBConvBlock6( &outputs[4], 6,  4,  40,  40,  28, 5, 1, 2, 2, 2, 2);
+    blocks[5]  = MBConvBlock6( &outputs[5], 6,  5,  40,  80,  28, 3, 2, 0, 1, 1, 0);
+    blocks[6]  = MBConvBlock6( &outputs[6], 6,  6,  80,  80,  14, 3, 1, 1, 1, 1, 1);
+    blocks[7]  = MBConvBlock6( &outputs[7], 6,  7,  80,  80,  14, 3, 1, 1, 1, 1, 1);
+    blocks[8]  = MBConvBlock6( &outputs[8], 6,  8,  80, 112,  14, 5, 1, 2, 2, 2, 2);
+    blocks[9]  = MBConvBlock6( &outputs[9], 6,  9, 112, 112,  14, 5, 1, 2, 2, 2, 2);
+    blocks[10] = MBConvBlock6(&outputs[10], 6, 10, 112, 112,  14, 5, 1, 2, 2, 2, 2);
+    blocks[11] = MBConvBlock6(&outputs[11], 6, 11, 112, 192,  14, 5, 2, 1, 2, 2, 1);
+    blocks[12] = MBConvBlock6(&outputs[12], 6, 12, 192, 192,   7, 5, 1, 2, 2, 2, 2);
+    blocks[13] = MBConvBlock6(&outputs[13], 6, 13, 192, 192,   7, 5, 1, 2, 2, 2, 2);
+    blocks[14] = MBConvBlock6(&outputs[14], 6, 14, 192, 192,   7, 5, 1, 2, 2, 2, 2);
+    blocks[15] = MBConvBlock6(&outputs[15], 6, 15, 192, 320,   7, 3, 1, 1, 1, 1, 1);
     
-    // swish
-    ndarray_t* swish0_out = create_empty_ndarray(4, expand_conv_out_size);
+    zero_padding(conv_stem_in, inputs, 0, 1, 1, 0);
+    conv2d_forward(conv_stem_out, conv_stem_in, conv_stem);
+    batchnorm_forward(bn_stem_out, conv_stem_out, bn_stem);
+    swish(swish_stem_out, bn_stem_out);
+    mbconv1_forward(outputs[0], swish_stem_out, blocks[0]);
+    for (int i = 1; i < 16; i++) {
+        mbconv6_forward(outputs[i], outputs[i-1]->final_out, blocks[i]);
+    }
     
-    // padding
-    int pad0_size[4] = {1, 96, 113, 113};
-    ndarray_t* pad0_out = create_empty_ndarray(4, pad0_size);
-    
-    // depthwise_conv
-    int depthwise_conv_out_size[4] = {1, 96, 56, 56};
-    conv2d_layer_t* depthwise_conv = Conv2d(96, 96, 0, 3, 2, 1, 1, 1, 1, get_param_from_name("_blocks.1._depthwise_conv.weight"));
-    ndarray_t* depthwise_conv_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
-    // batch_norm1
-    batchnorm_layer_t* bn1 = Batchnorm(
-        get_param_from_name("_blocks.1._bn1.running_mean"),
-        get_param_from_name("_blocks.1._bn1.running_var"),
-        get_param_from_name("_blocks.1._bn1.weight"),
-        get_param_from_name("_blocks.1._bn1.bias")
-    );
-    ndarray_t* bn1_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
-    // swish
-    ndarray_t* swish1_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
-    // average pooling
-    int avgpool_size[4] = {1, 96, 1, 1};
-    ndarray_t* avgpool_out = create_empty_ndarray(4, avgpool_size);
-    
-    // se_reduce
-    int se_reduce_out_size[4] = {1, 4, 1, 1};
-    conv2d_layer_t* se_reduce = Conv2d_bias(96, 4, 0, 1, 1, 0, 0, 0, 0, 
-        get_param_from_name("_blocks.1._se_reduce.weight"),
-        get_param_from_name("_blocks.1._se_reduce.bias"));
-    ndarray_t* se_reduce_out = create_empty_ndarray(4, se_reduce_out_size);
-    
-    // swish
-    ndarray_t* swish2_out = create_empty_ndarray(4, se_reduce_out_size);
-    
-    // se_expand
-    int se_expand_out_size[4] = {1, 96, 1, 1};
-    conv2d_layer_t* se_expand = Conv2d_bias(4, 96, 0, 1, 1, 0, 0, 0, 0, 
-        get_param_from_name("_blocks.1._se_expand.weight"),
-        get_param_from_name("_blocks.1._se_expand.bias"));
-    ndarray_t* se_expand_out = create_empty_ndarray(4, se_expand_out_size);
-    
-    // sigmoid multiply
-    ndarray_t* sigmoid_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
-    // project conv
-    int project_conv_out_size[4] = {1, 24, 56, 56};
-    conv2d_layer_t* project_conv = Conv2d(96, 24, 0, 1, 1, 0, 0, 0, 0, 
-        get_param_from_name("_blocks.1._project_conv.weight"));
-    ndarray_t* project_conv_out = create_empty_ndarray(4, project_conv_out_size);
-    
-    // batch_norm2
-    batchnorm_layer_t* bn2 = Batchnorm(
-        get_param_from_name("_blocks.1._bn2.running_mean"),
-        get_param_from_name("_blocks.1._bn2.running_var"),
-        get_param_from_name("_blocks.1._bn2.weight"),
-        get_param_from_name("_blocks.1._bn2.bias")
-    );
-    ndarray_t* bn2_out = create_empty_ndarray(4, project_conv_out_size);
-    
-    // forward
-    
-    conv2d_forward(expand_conv_out, expand_conv_in, expand_conv);
-    batchnorm_forward(bn0_out, expand_conv_out, bn0);
-    swish(swish0_out, bn0_out);
-    zero_padding(pad0_out, swish0_out, 0, 1, 1, 0);
-    conv2d_forward(depthwise_conv_out, pad0_out, depthwise_conv);
-    batchnorm_forward(bn1_out, depthwise_conv_out, bn1);
-    swish(swish1_out, bn1_out);
-    average_pooling(avgpool_out, swish1_out);
-    conv2d_forward(se_reduce_out, avgpool_out, se_reduce);
-    swish(swish2_out, se_reduce_out);
-    conv2d_forward(se_expand_out, swish2_out, se_expand);
-    sigmoid_multiply(sigmoid_out, se_expand_out, swish1_out);
-    conv2d_forward(project_conv_out, sigmoid_out, project_conv);
-    batchnorm_forward(bn2_out, project_conv_out, bn2);
-    */
-    
-    mb_conv_block_t* block1 = (mb_conv_block_t*)malloc(sizeof(mb_conv_block_t));
-    mb_conv_outputs_t* out1 = (mb_conv_outputs_t*)malloc(sizeof(mb_conv_outputs_t));
-    MBConvBlock6(block1, out1, 1, 16, 24, 112, 3, 2, 0, 1, 1, 0);
-    mbconv6_forward(out1, input, block1);
     ndarray_t* bn2_target = create_param_from_name("bn2_out");
-    printf("done. (loss: %f)\n", calc_loss(out1->final_out, bn2_target));
+    printf("done. (loss: %f)\n", calc_loss(outputs[1]->final_out, bn2_target));
     return 0;
 }

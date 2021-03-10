@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-static int param_num = 307;
+static int param_num = 309;
 extern char** names;
 extern ndarray_t* params;
 
@@ -75,11 +75,12 @@ typedef struct {
     batchnorm_layer_t* bn0;
     batchnorm_layer_t* bn1;
     batchnorm_layer_t* bn2;
+    int in_channels;
+    int out_channels;
     int dw_pad_top;
     int dw_pad_bottom;
     int dw_pad_right;
     int dw_pad_left;
-    int output_size;
 } mb_conv_block_t;
 
 typedef struct {
@@ -100,9 +101,9 @@ typedef struct {
 } mb_conv_outputs_t;
 
 // create mbconv block
-void MBConvBlock6(
-    mb_conv_block_t* block,
-    mb_conv_outputs_t* output,
+mb_conv_block_t* MBConvBlock6(
+    mb_conv_outputs_t** output,
+    const int expand_rate,
     const int block_num,
     const int in_channels,
     const int out_channels,
@@ -171,6 +172,7 @@ void load_params(char*** names_p, ndarray_t** params_p);
 
 // forward function
 void mbconv6_forward(mb_conv_outputs_t* outputs, const ndarray_t* input, const mb_conv_block_t* mb);
+void mbconv1_forward(mb_conv_outputs_t* outputs, const ndarray_t* input, const mb_conv_block_t* mb);
 void conv2d_forward(ndarray_t* output, const ndarray_t* input, const conv2d_layer_t* layer);
 void batchnorm_forward(ndarray_t* output, const ndarray_t* input, const batchnorm_layer_t* layer);
 

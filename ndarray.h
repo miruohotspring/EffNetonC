@@ -13,5 +13,7 @@ ndarray_t* create_empty_ndarray(int dim, int* size);
 void delete_ndarray(ndarray_t* param);
 
 void product_ewise(ndarray_t* output, const ndarray_t* a, const ndarray_t* b);
+void add_ndarray(ndarray_t* x, const ndarray_t* y);
+void print_size(ndarray_t* a);
 
 #endif

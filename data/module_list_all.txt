@@ -1,6 +1,8 @@
 _conv_stem.weight
 _bn0.running_mean
 _bn0.running_var
+_bn0.weight
+_bn0.bias
 _blocks.0._depthwise_conv.weight
 _blocks.0._bn1.running_mean
 _blocks.0._bn1.running_var

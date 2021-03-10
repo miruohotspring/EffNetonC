@@ -8,12 +8,26 @@
 char** names;
 ndarray_t* params;
 
-int main() {
-    char str[100];
-    sprintf(str,"%s%s%d\n","hoge","piyo",2);
-    printf("%s", str);
-    sprintf(str,"%s%s%d\n","fuga","buma",4);
-    printf("%s", str);
-    return 0;
+typedef struct {
+    int value;
+} int_t;
+
+int_t* addsub(int_t** diff, int x, int y) {
+    int_t* sum = (int_t*)malloc(sizeof(int_t));
+    *diff = (int_t*)malloc(sizeof(int_t));
+    
+    sum->value = x + y;
+    (*diff)->value = x - y;
+    
+    return sum;
 }
 
+int main() {
+    int_t* sum;
+    int_t* diff;
+    sum = addsub(&diff, 5, 4);
+    
+    printf("sum: %d\n", sum->value);
+    printf("diff: %d\n", diff->value);
+    return 0;
+}

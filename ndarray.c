@@ -40,6 +40,23 @@ void delete_ndarray(ndarray_t* array) {
 void product_ewise(ndarray_t* output, const ndarray_t* a, const ndarray_t* b) {
     
 }
+
+void add_ndarray(ndarray_t* x, const ndarray_t* y) {
+    assert(x->length == y->length);
+    
+    for (int i = 0; i < x->length; i++) {
+        x->data[i] = x->data[i] + y->data[i];
+    }
+}
+
+void print_size(ndarray_t* a) {
+    printf("[");
+    for (int i = 0; i < a->dim; i++) {
+        printf("%d", a->size[i]);
+        if (i < a->dim-1) printf(", ");
+    }
+    printf("]\n");
+}
     
 
 
