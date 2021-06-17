@@ -1,5 +1,14 @@
-#include "ndarray.h"
-#include "network.h"
+/*
+ * network.c
+ *
+ *  Created on: Mar 17, 2021
+ *      Author: shirakawa
+ */
+
+
+#include "ndarray.hpp"
+#include "network.hpp"
+#include "util.hpp"
 
 #include <string.h>
 #include <stdlib.h>
@@ -33,10 +42,10 @@ mb_conv_block_t* MBConvBlock6(
     char prefix[100] = "_blocks.";
     char block_num_char = '0' + block_num;
     sprintf(prefix, "%s%d", prefix, block_num);
-    
-    mb_conv_block_t* block = (mb_conv_block_t*)malloc(sizeof(mb_conv_block_t));
-    *output = (mb_conv_outputs_t*)malloc(sizeof(mb_conv_outputs_t));
-    
+
+    mb_conv_block_t* block = (mb_conv_block_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(mb_conv_block_t));
+    *output = (mb_conv_outputs_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(mb_conv_outputs_t));
+
     // expand_conv
     int* expand_conv_out_size;
     conv2d_layer_t* expand_conv;
@@ -45,7 +54,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* bn0_out;
     ndarray_t* swish0_out;
     if (expand_rate != 1) {
-        expand_conv_out_size = (int*)malloc(sizeof(int)*4);
+        expand_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
         expand_conv_out_size[0] = 1;
         expand_conv_out_size[1] = in_channels * expand_rate;
         expand_conv_out_size[2] = input_size;
@@ -53,7 +62,7 @@ mb_conv_block_t* MBConvBlock6(
         sprintf(str, "%s%s", prefix, "._expand_conv.weight");
         expand_conv = Conv2d(in_channels, in_channels * expand_rate, 0, 1, 1, 0, 0, 0, 0, get_param_from_name(str));
         expand_conv_out = create_empty_ndarray(4, expand_conv_out_size);
-        
+
         // batch_norm0
         sprintf(str, "%s%s", prefix, "._bn0.running_mean");
         sprintf(str2, "%s%s", prefix, "._bn0.running_var");
@@ -66,24 +75,24 @@ mb_conv_block_t* MBConvBlock6(
             get_param_from_name(str4)
         );
         bn0_out = create_empty_ndarray(4, expand_conv_out_size);
-        
+
         // swish
         swish0_out = create_empty_ndarray(4, expand_conv_out_size);
     }
-    
+
     // padding
     int ih = input_size + dw_pad_top + dw_pad_bottom;
     int iw = input_size + dw_pad_left + dw_pad_right;
-    
-    int* pad0_size = (int*)malloc(sizeof(int)*4);
+
+    int* pad0_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     pad0_size[0] = 1;
     pad0_size[1] = in_channels * expand_rate;
     pad0_size[2] = ih;
     pad0_size[3] = iw;
     ndarray_t* pad0_out = create_empty_ndarray(4, pad0_size);
-    
+
     // depthwise_conv
-    int* depthwise_conv_out_size = (int*)malloc(sizeof(int)*4);
+    int* depthwise_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     depthwise_conv_out_size[0] = 1;
     depthwise_conv_out_size[1] = in_channels * expand_rate;
     depthwise_conv_out_size[2] = (ih-dw_kernel)/dw_stride + 1;
@@ -91,7 +100,7 @@ mb_conv_block_t* MBConvBlock6(
     sprintf(str, "%s%s", prefix, "._depthwise_conv.weight");
     conv2d_layer_t* depthwise_conv = Conv2d(in_channels * expand_rate, in_channels * expand_rate, in_channels * expand_rate, dw_kernel, dw_stride, dw_pad_top, dw_pad_bottom, dw_pad_right, dw_pad_left, get_param_from_name(str));
     ndarray_t* depthwise_conv_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
+
     // batch_norm1
     sprintf(str, "%s%s", prefix, "._bn1.running_mean");
     sprintf(str2, "%s%s", prefix, "._bn1.running_var");
@@ -104,61 +113,61 @@ mb_conv_block_t* MBConvBlock6(
         get_param_from_name(str4)
     );
     ndarray_t* bn1_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
+
     // swish
     ndarray_t* swish1_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
+
     // average pooling
-    int* avgpool_size = (int*)malloc(sizeof(int)*4);
+    int* avgpool_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     avgpool_size[0] = 1;
     avgpool_size[1] = in_channels * expand_rate;
     avgpool_size[2] = 1;
     avgpool_size[3] = 1;
     ndarray_t* avgpool_out = create_empty_ndarray(4, avgpool_size);
-    
+
     // se_reduce
-    int* se_reduce_out_size = (int*)malloc(sizeof(int)*4);
+    int* se_reduce_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     se_reduce_out_size[0] = 1;
     se_reduce_out_size[1] = in_channels/4;
     se_reduce_out_size[2] = 1;
     se_reduce_out_size[3] = 1;
     sprintf(str, "%s%s", prefix, "._se_reduce.weight");
     sprintf(str2, "%s%s", prefix, "._se_reduce.bias");
-    conv2d_layer_t* se_reduce = Conv2d_bias(in_channels * expand_rate, in_channels/4, 0, 1, 1, 0, 0, 0, 0, 
+    conv2d_layer_t* se_reduce = Conv2d_bias(in_channels * expand_rate, in_channels/4, 0, 1, 1, 0, 0, 0, 0,
         get_param_from_name(str),
         get_param_from_name(str2));
     ndarray_t* se_reduce_out = create_empty_ndarray(4, se_reduce_out_size);
-    
+
     // swish
     ndarray_t* swish2_out = create_empty_ndarray(4, se_reduce_out_size);
-    
+
     // se_expand
-    int* se_expand_out_size = (int*)malloc(sizeof(int)*4);
+    int* se_expand_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     se_expand_out_size[0] = 1;
     se_expand_out_size[1] = in_channels * expand_rate;
     se_expand_out_size[2] = 1;
     se_expand_out_size[3] = 1;
     sprintf(str, "%s%s", prefix, "._se_expand.weight");
     sprintf(str2, "%s%s", prefix, "._se_expand.bias");
-    conv2d_layer_t* se_expand = Conv2d_bias(in_channels/4, in_channels * expand_rate, 0, 1, 1, 0, 0, 0, 0, 
+    conv2d_layer_t* se_expand = Conv2d_bias(in_channels/4, in_channels * expand_rate, 0, 1, 1, 0, 0, 0, 0,
         get_param_from_name(str),
         get_param_from_name(str2));
     ndarray_t* se_expand_out = create_empty_ndarray(4, se_expand_out_size);
-    
+
     // sigmoid multiply
     ndarray_t* sigmoid_out = create_empty_ndarray(4, depthwise_conv_out_size);
-    
+
     // project conv
-    int* project_conv_out_size = (int*)malloc(sizeof(int)*4);
+    int* project_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     project_conv_out_size[0] = 1;
     project_conv_out_size[1] = out_channels;
     project_conv_out_size[2] = (ih-dw_kernel)/dw_stride + 1;
     project_conv_out_size[3] = (iw-dw_kernel)/dw_stride + 1;
     sprintf(str, "%s%s", prefix, "._project_conv.weight");
-    conv2d_layer_t* project_conv = Conv2d(in_channels * expand_rate, out_channels, 0, 1, 1, 0, 0, 0, 0, 
+    conv2d_layer_t* project_conv = Conv2d(in_channels * expand_rate, out_channels, 0, 1, 1, 0, 0, 0, 0,
         get_param_from_name(str));
     ndarray_t* project_conv_out = create_empty_ndarray(4, project_conv_out_size);
-    
+
     // batch_norm2
     sprintf(str, "%s%s", prefix, "._bn2.running_mean");
     sprintf(str2, "%s%s", prefix, "._bn2.running_var");
@@ -171,7 +180,7 @@ mb_conv_block_t* MBConvBlock6(
         get_param_from_name(str4)
     );
     ndarray_t* bn2_out = create_empty_ndarray(4, project_conv_out_size);
-    
+
     block->expand_conv = expand_conv;
     block->depthwise_conv = depthwise_conv;
     block->se_reduce = se_reduce;
@@ -186,7 +195,7 @@ mb_conv_block_t* MBConvBlock6(
     block->dw_pad_left = dw_pad_left;
     block->in_channels = in_channels;
     block->out_channels = out_channels;
-    
+
     (*output)->expand_conv_out = expand_conv_out;
     (*output)->depthwise_conv_out = depthwise_conv_out;
     (*output)->se_reduce_out = se_reduce_out;
@@ -201,7 +210,7 @@ mb_conv_block_t* MBConvBlock6(
     (*output)->sigmoid_out = sigmoid_out;
     (*output)->pad0_out = pad0_out;
     (*output)->final_out = bn2_out;
-    
+
     return block;
 }
 
@@ -217,7 +226,7 @@ conv2d_layer_t* Conv2d(
     int padding_left,
     ndarray_t* weight
 ) {
-    conv2d_layer_t* layer = (conv2d_layer_t*)malloc(sizeof(conv2d_layer_t));
+    conv2d_layer_t* layer = (conv2d_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_layer_t));
     layer->in_channels = in_channels;
     layer->out_channels = out_channels;
     layer->groups = groups;
@@ -229,7 +238,7 @@ conv2d_layer_t* Conv2d(
     layer->padding_left = padding_left;
     layer->weight = weight;
     layer->bias = NULL;
-    
+
     return layer;
 }
 
@@ -246,7 +255,7 @@ conv2d_layer_t* Conv2d_bias(
     ndarray_t* weight,
     ndarray_t* bias
 ) {
-    conv2d_layer_t* layer = (conv2d_layer_t*)malloc(sizeof(conv2d_layer_t));
+    conv2d_layer_t* layer = (conv2d_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_layer_t));
     layer->in_channels = in_channels;
     layer->out_channels = out_channels;
     layer->groups = groups;
@@ -258,7 +267,7 @@ conv2d_layer_t* Conv2d_bias(
     layer->padding_left = padding_left;
     layer->weight = weight;
     layer->bias = bias;
-    
+
     return layer;
 }
 
@@ -268,12 +277,12 @@ batchnorm_layer_t* Batchnorm(
     ndarray_t* weight,
     ndarray_t* bias
 ) {
-    batchnorm_layer_t* layer = (batchnorm_layer_t*)malloc(sizeof(batchnorm_layer_t));
+    batchnorm_layer_t* layer = (batchnorm_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(batchnorm_layer_t));
     layer->running_mean = running_mean;
     layer->running_var = running_var;
     layer->weight = weight;
     layer->bias = bias;
-    
+
     return layer;
 }
 
@@ -283,8 +292,8 @@ conv2d_t* create_conv2d(
     int kernel_size,
     int stride
 ) {
-    conv2d_t* layer = (conv2d_t*)malloc(sizeof(conv2d_t));
-    int* output_size = (int*)malloc(sizeof(int)*4);
+    conv2d_t* layer = (conv2d_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_t));
+    int* output_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     return layer;
 }
 
@@ -296,12 +305,12 @@ ndarray_t* create_conv2d_output(
     int ih,
     int iw
 ) {
-    int* size = (int*)malloc(sizeof(int)*4);
+    int* size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
     size[0] = 1;
     size[1] = out_channels;
     size[2] = (ih - kernel_size) / stride + 1;
     size[3] = (iw - kernel_size) / stride + 1;
-    
+
     return create_empty_ndarray(4, size);
 }
 
@@ -317,14 +326,14 @@ ndarray_t* get_param_from_name(char* name) {
     }
     return &params[index];
 }
-    
+
 ndarray_t* create_param_from_name(char* name) {
-    ndarray_t* param = (ndarray_t*)malloc(sizeof(ndarray_t));
+    ndarray_t* param = (ndarray_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(ndarray_t));
     int length = 1;
     int dim;
     int* size;
     float* data;
-    
+
     FILE* f;
     char path[100] = "./data/";
     char c;
@@ -338,63 +347,59 @@ ndarray_t* create_param_from_name(char* name) {
     }
     if ((dim = fgetc(f) - '0') == 0) return NULL;
     while ((fgetc(f)) != ',');
-    
-    size = (int*)malloc(sizeof(int)*dim);
+
+    size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*dim);
     for (int i = 0; i < dim; i++) {
         for (j = 0; (c = fgetc(f)), (c != ',' && c != EOF); j++) s[j] = c;
         s[j] = 0;
         size[i] = atoi(s);
         length *= size[i];
     }
-    
-    data = (float*)malloc(sizeof(float)*length);
-    for (int i = 0; i < length; i++) {
+
+    data = (float*)aligned_alloc(MEM_ALIGNMENT, sizeof(float)*length);
+    for (int i2 = 0; i2 < length; i2++) {
         for (j = 0; (c = fgetc(f)), (c != ',' && c != EOF); j++) s[j] = c;
         s[j] = 0;
-        data[i] = atof(s);
+        data[i2] = atof(s);
     }
-    
+
     param->length = length;
     param->dim = dim;
     param->size = size;
     param->data = data;
-    
+
     fclose(f);
     return param;
 }
 
 void load_params(char*** names_p, ndarray_t** params_p) {
-    *params_p = (ndarray_t*)malloc(param_num * sizeof(ndarray_t));
-    *names_p = (char**)malloc(param_num * sizeof(char*));
+    *params_p = (ndarray_t*)aligned_alloc(MEM_ALIGNMENT, param_num * sizeof(ndarray_t));
+    *names_p = (char**)aligned_alloc(MEM_ALIGNMENT, param_num * sizeof(char*));
     for (int i = 0; i < param_num; i++) {
-        (*names_p)[i] = (char*)malloc(100 * sizeof(char));
+        (*names_p)[i] = (char*)aligned_alloc(MEM_ALIGNMENT, 100 * sizeof(char));
     }
-    
+
     FILE* f;
     char readline[100];
-    
+
     if ((f = fopen("./data/module_list_all.txt", "r")) == NULL) {
         printf("file open error: cannot open list");
         exit(EXIT_FAILURE);
     }
-    int i = 0;
+    int i2 = 0;
     while (fgets(readline, 100, f) != NULL) {
         readline[strcspn(readline, "\n")] = 0;
         ndarray_t* param = create_param_from_name(readline);
         if (param == NULL) continue;
-        strcpy((*names_p)[i], readline);
-        (*params_p)[i] = *param;
-        i++;
-    }    
+        strcpy((*names_p)[i2], readline);
+        (*params_p)[i2] = *param;
+        i2++;
+    }
     fclose(f);
 }
 
-float sigmoid(float x) {
-    return 1.0 / (1.0 + exp(-1.0 * x));
-}
 
 void sigmoid_multiply(ndarray_t* output, const ndarray_t* input, const ndarray_t* multiplier) {
-    assert(output->dim == multiplier->dim);
     int image_size = output->size[2] * output->size[3];
     for (int c = 0; c < output->size[1]; c++) {
         for (int p = 0; p < image_size; p++) {
@@ -404,7 +409,6 @@ void sigmoid_multiply(ndarray_t* output, const ndarray_t* input, const ndarray_t
 }
 
 void swish(ndarray_t* output, const ndarray_t* input) {
-    assert(output->dim == input->dim);
     for (int i = 0; i < output->length; i++) {
         output->data[i] = input->data[i] * sigmoid(input->data[i]);
     }
@@ -460,7 +464,6 @@ void conv2d_forward(
     const conv2d_layer_t* layer
     )
 {
-    assert(output->dim == input->dim);
     int image_size = output->size[2] * output->size[3];
     int input_image_size = input->size[2] * input->size[3];
     if (layer->kernel_size == 1 && layer->bias == NULL) {
@@ -470,7 +473,7 @@ void conv2d_forward(
                     output->data[cout*image_size + p] +=\
                     layer->weight->data[cout*layer->in_channels + cin] *\
                     input->data[cin*image_size + p];
-                }    
+                }
             }
         }
     }
@@ -480,8 +483,8 @@ void conv2d_forward(
                 for (int cin = 0; cin < layer->in_channels; cin++) {
                     output->data[cout*image_size + p] +=\
                     layer->weight->data[cout*layer->in_channels + cin] *\
-                    input->data[cin*image_size + p]; 
-                }    
+                    input->data[cin*image_size + p];
+                }
                 output->data[cout*image_size + p] += layer->bias->data[cout];
             }
         }
@@ -496,7 +499,7 @@ void conv2d_forward(
                         int weight_i = cout*9;
                         int in_i = cout*input_image_size + row*input->size[3]*layer->stride + col*layer->stride;
                         int w = input->size[3];
-                        
+
                         output->data[out_i] += layer->weight->data[weight_i]     * input->data[in_i];
                         output->data[out_i] += layer->weight->data[weight_i + 1] * input->data[in_i + 1];
                         output->data[out_i] += layer->weight->data[weight_i + 2] * input->data[in_i + 2];
@@ -506,7 +509,7 @@ void conv2d_forward(
                         output->data[out_i] += layer->weight->data[weight_i + 6] * input->data[in_i + w*2];
                         output->data[out_i] += layer->weight->data[weight_i + 7] * input->data[in_i + w*2 + 1];
                         output->data[out_i] += layer->weight->data[weight_i + 8] * input->data[in_i + w*2 + 2];
-                        
+
                     }
                 }
                 }
@@ -521,7 +524,7 @@ void conv2d_forward(
                         int weight_i = cout*input->size[1]*9 + cin*9;
                         int in_i = cin*input_image_size + row*input->size[3]*layer->stride + col*layer->stride;
                         int w = input->size[3];
-                        
+
                         output->data[out_i] += layer->weight->data[weight_i]     * input->data[in_i];
                         output->data[out_i] += layer->weight->data[weight_i + 1] * input->data[in_i + 1];
                         output->data[out_i] += layer->weight->data[weight_i + 2] * input->data[in_i + 2];
@@ -531,7 +534,7 @@ void conv2d_forward(
                         output->data[out_i] += layer->weight->data[weight_i + 6] * input->data[in_i + w*2];
                         output->data[out_i] += layer->weight->data[weight_i + 7] * input->data[in_i + w*2 + 1];
                         output->data[out_i] += layer->weight->data[weight_i + 8] * input->data[in_i + w*2 + 2];
-                        
+
                     }
                 }
                 }
@@ -547,7 +550,7 @@ void conv2d_forward(
                     int weight_i = cout*25;
                     int in_i = cout*input_image_size + row*input->size[3]*layer->stride + col*layer->stride;
                     int w = input->size[3];
-                    
+
                     output->data[out_i] += layer->weight->data[weight_i]        * input->data[in_i];
                     output->data[out_i] += layer->weight->data[weight_i + 1]    * input->data[in_i + 1];
                     output->data[out_i] += layer->weight->data[weight_i + 2]    * input->data[in_i + 2];
@@ -573,7 +576,7 @@ void conv2d_forward(
                     output->data[out_i] += layer->weight->data[weight_i + 22]   * input->data[in_i + w*4 + 2];
                     output->data[out_i] += layer->weight->data[weight_i + 23]   * input->data[in_i + w*4 + 3];
                     output->data[out_i] += layer->weight->data[weight_i + 24]   * input->data[in_i + w*4 + 4];
-                    
+
                 }
             }
             }
@@ -587,7 +590,6 @@ void batchnorm_forward(
     const batchnorm_layer_t* layer
     )
 {
-    assert(output->dim == input->dim);
     int image_size = output->size[2] * output->size[3];
     for (int c = 0; c < output->size[1]; c++) {
         for (int p = 0; p < image_size; p++) {
@@ -608,7 +610,15 @@ example with padding of (top, bottom, right, left) = (1, 1, 1, 1):
 |c d|      ->      |0 c d 0|
                    |0 0 0 0|
 */
-void zero_padding(ndarray_t* output, const ndarray_t* input, int top, int bottom, int right, int left) {
+void zero_padding(
+	ndarray_t* output,
+	const ndarray_t* input,
+	int top,
+	int bottom,
+	int right,
+	int left
+) {
+
     int i_in = 0;
     int i_out = 0;
     for (int c = 0; c < output->size[1]; c++) {
@@ -636,46 +646,3 @@ void average_pooling(ndarray_t* output, const ndarray_t* input) {
         output->data[c] = sum / image_size;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

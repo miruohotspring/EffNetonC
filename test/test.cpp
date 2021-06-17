@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "ndarray.h"
-#include "network.h"
+#include "ndarray.hpp"
+#include "network.hpp"
 
 char** names;
 ndarray_t* params;

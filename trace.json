@@ -1,0 +1,14 @@
+{"traceEvents":[
+{"cat":"","pid":26867,"tid":-2028160,"ts":11,"ph":"M","name":"process_name","args":{"name":"minitrace_test"}},
+{"cat":"","pid":26867,"tid":-2028160,"ts":19,"ph":"M","name":"thread_name","args":{"name":"main thread"}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1271216,"ph":"B","name":"init","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1277986,"ph":"E","name":"init","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1277988,"ph":"B","name":"expand convolution","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1410357,"ph":"E","name":"expand convolution","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1410638,"ph":"B","name":"depthwise convolution","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1434783,"ph":"E","name":"depthwise convolution","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1434958,"ph":"B","name":"Squeeze-Excitation","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1444924,"ph":"E","name":"Squeeze-Excitation","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1445169,"ph":"B","name":"pointwise convolution","args":{}},
+{"cat":"kernel","pid":26867,"tid":-2028160,"ts":1493138,"ph":"E","name":"pointwise convolution","args":{}}
+]}

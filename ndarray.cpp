@@ -1,4 +1,4 @@
-#include "ndarray.h"
+#include "ndarray.hpp"
 
 #include <string.h>
 #include <stdlib.h>

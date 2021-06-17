@@ -1,9 +1,9 @@
 PROG := effnetonc
-SRCS := main.c network.c ndarray.c
-OBJS := $(SRCS:%.c=%.o)
-DEPS := $(SRCS:%.c=%.d)
+SRCS := $(wildcard *.cpp) 
+OBJS := $(SRCS:%.cpp=%.o)
+DEPS := $(SRCS:%.cpp=%.d)
 
-CC := gcc
+CC := g++
 CCFLAGS := 
 INCLUDEPATH := 
 LIBPATH := 
@@ -16,7 +16,7 @@ $(PROG): $(OBJS)
 	$(CC) $(CCFLAGS) -o $@ $^ $(LIBPATH) $(LIBS)
 
 .cpp.o:
-	$(CC) $(CCFLAGS) $(INCLUDEPATH) -MMD -MP -MF $(<:%.c=%.d) -c $< -o $(<:%.c=%.o)
+	$(CC) $(CCFLAGS) $(INCLUDEPATH) -DMTR_ENABLED -MMD -MP -MF $(<:%.cpp=%.d) -c $< -o $(<:%.cpp=%.o)
 
 
 .PHONY: clean
