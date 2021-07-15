@@ -43,8 +43,8 @@ mb_conv_block_t* MBConvBlock6(
     char block_num_char = '0' + block_num;
     sprintf(prefix, "%s%d", prefix, block_num);
 
-    mb_conv_block_t* block = (mb_conv_block_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(mb_conv_block_t));
-    *output = (mb_conv_outputs_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(mb_conv_outputs_t));
+    mb_conv_block_t* block = (mb_conv_block_t*)malloc(sizeof(mb_conv_block_t));
+    *output = (mb_conv_outputs_t*)malloc(sizeof(mb_conv_outputs_t));
 
     // expand_conv
     int* expand_conv_out_size;
@@ -54,7 +54,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* bn0_out;
     ndarray_t* swish0_out;
     if (expand_rate != 1) {
-        expand_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+        expand_conv_out_size = (int*)malloc(sizeof(int)*4);
         expand_conv_out_size[0] = 1;
         expand_conv_out_size[1] = in_channels * expand_rate;
         expand_conv_out_size[2] = input_size;
@@ -84,7 +84,7 @@ mb_conv_block_t* MBConvBlock6(
     int ih = input_size + dw_pad_top + dw_pad_bottom;
     int iw = input_size + dw_pad_left + dw_pad_right;
 
-    int* pad0_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* pad0_size = (int*)malloc(sizeof(int)*4);
     pad0_size[0] = 1;
     pad0_size[1] = in_channels * expand_rate;
     pad0_size[2] = ih;
@@ -92,7 +92,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* pad0_out = create_empty_ndarray(4, pad0_size);
 
     // depthwise_conv
-    int* depthwise_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* depthwise_conv_out_size = (int*)malloc(sizeof(int)*4);
     depthwise_conv_out_size[0] = 1;
     depthwise_conv_out_size[1] = in_channels * expand_rate;
     depthwise_conv_out_size[2] = (ih-dw_kernel)/dw_stride + 1;
@@ -118,7 +118,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* swish1_out = create_empty_ndarray(4, depthwise_conv_out_size);
 
     // average pooling
-    int* avgpool_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* avgpool_size = (int*)malloc(sizeof(int)*4);
     avgpool_size[0] = 1;
     avgpool_size[1] = in_channels * expand_rate;
     avgpool_size[2] = 1;
@@ -126,7 +126,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* avgpool_out = create_empty_ndarray(4, avgpool_size);
 
     // se_reduce
-    int* se_reduce_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* se_reduce_out_size = (int*)malloc(sizeof(int)*4);
     se_reduce_out_size[0] = 1;
     se_reduce_out_size[1] = in_channels/4;
     se_reduce_out_size[2] = 1;
@@ -142,7 +142,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* swish2_out = create_empty_ndarray(4, se_reduce_out_size);
 
     // se_expand
-    int* se_expand_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* se_expand_out_size = (int*)malloc(sizeof(int)*4);
     se_expand_out_size[0] = 1;
     se_expand_out_size[1] = in_channels * expand_rate;
     se_expand_out_size[2] = 1;
@@ -158,7 +158,7 @@ mb_conv_block_t* MBConvBlock6(
     ndarray_t* sigmoid_out = create_empty_ndarray(4, depthwise_conv_out_size);
 
     // project conv
-    int* project_conv_out_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* project_conv_out_size = (int*)malloc(sizeof(int)*4);
     project_conv_out_size[0] = 1;
     project_conv_out_size[1] = out_channels;
     project_conv_out_size[2] = (ih-dw_kernel)/dw_stride + 1;
@@ -226,7 +226,7 @@ conv2d_layer_t* Conv2d(
     int padding_left,
     ndarray_t* weight
 ) {
-    conv2d_layer_t* layer = (conv2d_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_layer_t));
+    conv2d_layer_t* layer = (conv2d_layer_t*)malloc(sizeof(conv2d_layer_t));
     layer->in_channels = in_channels;
     layer->out_channels = out_channels;
     layer->groups = groups;
@@ -255,7 +255,7 @@ conv2d_layer_t* Conv2d_bias(
     ndarray_t* weight,
     ndarray_t* bias
 ) {
-    conv2d_layer_t* layer = (conv2d_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_layer_t));
+    conv2d_layer_t* layer = (conv2d_layer_t*)malloc(sizeof(conv2d_layer_t));
     layer->in_channels = in_channels;
     layer->out_channels = out_channels;
     layer->groups = groups;
@@ -277,7 +277,7 @@ batchnorm_layer_t* Batchnorm(
     ndarray_t* weight,
     ndarray_t* bias
 ) {
-    batchnorm_layer_t* layer = (batchnorm_layer_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(batchnorm_layer_t));
+    batchnorm_layer_t* layer = (batchnorm_layer_t*)malloc(sizeof(batchnorm_layer_t));
     layer->running_mean = running_mean;
     layer->running_var = running_var;
     layer->weight = weight;
@@ -292,8 +292,8 @@ conv2d_t* create_conv2d(
     int kernel_size,
     int stride
 ) {
-    conv2d_t* layer = (conv2d_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(conv2d_t));
-    int* output_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    conv2d_t* layer = (conv2d_t*)malloc(sizeof(conv2d_t));
+    int* output_size = (int*)malloc(sizeof(int)*4);
     return layer;
 }
 
@@ -305,7 +305,7 @@ ndarray_t* create_conv2d_output(
     int ih,
     int iw
 ) {
-    int* size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*4);
+    int* size = (int*)malloc(sizeof(int)*4);
     size[0] = 1;
     size[1] = out_channels;
     size[2] = (ih - kernel_size) / stride + 1;
@@ -328,7 +328,7 @@ ndarray_t* get_param_from_name(char* name) {
 }
 
 ndarray_t* create_param_from_name(char* name) {
-    ndarray_t* param = (ndarray_t*)aligned_alloc(MEM_ALIGNMENT, sizeof(ndarray_t));
+    ndarray_t* param = (ndarray_t*)malloc(sizeof(ndarray_t));
     int length = 1;
     int dim;
     int* size;
@@ -348,7 +348,7 @@ ndarray_t* create_param_from_name(char* name) {
     if ((dim = fgetc(f) - '0') == 0) return NULL;
     while ((fgetc(f)) != ',');
 
-    size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int)*dim);
+    size = (int*)malloc(sizeof(int)*dim);
     for (int i = 0; i < dim; i++) {
         for (j = 0; (c = fgetc(f)), (c != ',' && c != EOF); j++) s[j] = c;
         s[j] = 0;
@@ -356,7 +356,7 @@ ndarray_t* create_param_from_name(char* name) {
         length *= size[i];
     }
 
-    data = (float*)aligned_alloc(MEM_ALIGNMENT, sizeof(float)*length);
+    data = (float*)malloc(sizeof(float)*length);
     for (int i2 = 0; i2 < length; i2++) {
         for (j = 0; (c = fgetc(f)), (c != ',' && c != EOF); j++) s[j] = c;
         s[j] = 0;
@@ -373,10 +373,10 @@ ndarray_t* create_param_from_name(char* name) {
 }
 
 void load_params(char*** names_p, ndarray_t** params_p) {
-    *params_p = (ndarray_t*)aligned_alloc(MEM_ALIGNMENT, param_num * sizeof(ndarray_t));
-    *names_p = (char**)aligned_alloc(MEM_ALIGNMENT, param_num * sizeof(char*));
+    *params_p = (ndarray_t*)malloc(param_num * sizeof(ndarray_t));
+    *names_p = (char**)malloc(param_num * sizeof(char*));
     for (int i = 0; i < param_num; i++) {
-        (*names_p)[i] = (char*)aligned_alloc(MEM_ALIGNMENT, 100 * sizeof(char));
+        (*names_p)[i] = (char*)malloc(100 * sizeof(char));
     }
 
     FILE* f;

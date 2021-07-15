@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     // Layer Fusion 1.
     // create a new bias array
     ndarray_t* fused_conv1_bias;
-    int* fu1_bias_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int));
+    int* fu1_bias_size = (int*)malloc(sizeof(int));
     fu1_bias_size[0] = krnl_block->expand_conv->weight->size[0];
     fused_conv1_bias = create_empty_ndarray(1, fu1_bias_size);
     for (int c = 0; c < krnl_block->expand_conv->weight->size[0]; c++) {
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     // Layer Fusion 2.
     // create a new bias array
     ndarray_t* fused_conv2_bias;
-    int* fu2_bias_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int));
+    int* fu2_bias_size = (int*)malloc(sizeof(int));
     fu2_bias_size[0] = 96;
     fused_conv2_bias = create_empty_ndarray(1, fu2_bias_size);
     for (int c = 0; c < 96; c++) {
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     // Layer Fusion 3.
     // create a new bias array
     ndarray_t* fused_conv3_bias;
-    int* fu3_bias_size = (int*)aligned_alloc(MEM_ALIGNMENT, sizeof(int));
+    int* fu3_bias_size = (int*)malloc(sizeof(int));
     fu3_bias_size[0] = 24;
     fused_conv3_bias = create_empty_ndarray(1, fu3_bias_size);
     for (int c = 0; c < 24; c++) {
